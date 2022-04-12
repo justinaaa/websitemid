@@ -1,6 +1,7 @@
+@import url(https://fonts.googleapis.com/earlyaccess/cwtexyen.css);
 body{
     text-align: center;
     background-image: url(images/pic25.jpeg);
     font-weight: bold;
-    
+    font-family: 'cwTeXYen', sans-serif;
 }

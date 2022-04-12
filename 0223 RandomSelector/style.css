@@ -1,7 +1,8 @@
+@import url(https://fonts.googleapis.com/earlyaccess/cwtexyen.css);
 body{
     text-align: center;
     background-image: url(image/pic01.png);
-    font-family: Microsoft JhengHei;
+    font-family: 'cwTeXYen', sans-serif;
 }
 
 
