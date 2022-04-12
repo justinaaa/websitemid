@@ -1,0 +1,25 @@
+body{
+    text-align: center;
+    background-image: url(images/pic01.png);
+}
+table{
+    border: 2px solid rgb(91, 84, 84);
+    width: 60%;
+    border-spacing: 0;
+    margin: auto;
+    font-size: 1.5em;
+    font-family: Microsoft JhengHei;
+    background-color: gainsboro;
+}
+
+tr{
+    text-align: center;
+}
+
+th{
+    padding: 10px;
+}
+
+td:hover{
+    background-color: lightgrey;
+}

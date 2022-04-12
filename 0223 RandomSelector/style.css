@@ -1,0 +1,12 @@
+body{
+    text-align: center;
+    background-image: url(image/pic01.png);
+    font-family: Microsoft JhengHei;
+}
+
+
+#cell {vertical-align:middle; }
+
+li{
+    text-align: left;
+}
