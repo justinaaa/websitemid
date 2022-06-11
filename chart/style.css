@@ -1,0 +1,18 @@
+svg{
+    border: 1px solid #ccc;
+
+}
+
+.axis .domain{
+    stroke: none;
+}
+
+.x line{
+    stroke: white;
+}
+
+body{
+    text-align: center;
+    background-color: #ffffff;
+    font-family: 'cwTeXYen', sans-serif;
+}
