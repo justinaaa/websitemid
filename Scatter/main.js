@@ -118,8 +118,79 @@ function setupCanvas(scatterData){
                               .call(yAxis)
                               .call(addLabel,'Revenue',-30,-30);
     yAxisDraw.selectAll('text').attr('dx','-2em');
+
+    function brushed(e){
+        if(e.selection){
+            const [[x0,y0],[x1,y1]] = e.selection;
+            const selected = scatterData.filter(
+                d =>
+                    x0 <= xScale(d.budget) && xScale(d.budget) < x1 &&
+                    y0 <= yScale(d.revenue) && yScale(d.revenue) < y1
+            );
+            //console.log(selected);
+            updateSelected(selected);
+            highlightSelected(selected);
+        }else{
+            d3.select('.selected-body').html('');
+            highlightSelected([]);
+        }
+    }
+    //Add brush
+    const brush = d3.brush().extent([[0,0],[svg_width,svg_height]]).on('brush',brushed);
+    this_svg.append('g').attr('class','brush').call(brush);
+    
+    d3.select('.selected-container')
+      .style('width',`${svg_width}px`).style('height',`${svg_height}px`);
 }
 
+function highlightSelected(data){
+    const selectedIDs = data.map(d=>d.id);
+    d3.selectAll('.scatter').filter(d=>selectedIDs.includes(d.id))
+    .style('fill','green');
+    d3.selectAll('.scatter').filter(d=>!selectedIDs.includes(d.id))
+    .style('fill','dodgerblue');
+}
+    
+
+function updateSelected(data){
+    d3.select('.selected-body').selectAll('.selected-element')
+      .on('mouseover',mouseoverListItem)
+      .on('mouseout',mouseoutListItem)
+      .data(data, d=>d.id)
+      .join(
+        enter => {
+            enter.append('p').attr('class','selected-element')
+                 .html(
+                    d=> `<span class="selected-title">${d.title}</span>, 
+                        ${d.release_year}
+                        <br>budget: ${formatTicks(d.budget)} | 
+                        revenue: ${formatTicks(d.revenue)}`
+                );
+            },
+            update => {
+                update
+            },
+            exit => {
+                exit.remove();
+            }
+        )
+    let selectedId;
+
+    function mouseoverListItem(){
+        selectedId = d3.select(this).data()[0].id;
+        d3.selectAll('.scatter')
+        .filter(d=>d.id === selectedId)
+        .transition().attr('r',6).style('fill','coral')
+    }
+
+    function mouseoutListItem(){
+        selectedId = d3.select(this).data()[0].id;
+        d3.selectAll('.scatter')
+        .filter(d=>d.id === selectedId)
+        .transition().attr('r',3).style('fill','dodgerblue');
+    }
+        
+}
 
 //Main
 function ready(movies){
