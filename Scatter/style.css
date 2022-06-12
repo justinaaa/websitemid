@@ -1,0 +1,19 @@
+svg{
+    border: 1px solid #ccc;
+}
+
+.axis .domain{
+    stroke: #bbb;
+}
+
+.axis .tick line{
+    stroke: #bbb;
+    stroke-width: 0.5;
+    stroke-dasharray: 4,2;
+}
+
+body{
+    text-align: center;
+    background-color: #f0e4e4;
+    font-family: 'cwTeXYen', sans-serif;
+}

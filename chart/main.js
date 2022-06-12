@@ -43,6 +43,10 @@ function filterData(data){
     );
 }
 
+function cutText(string){
+    return string.length < 35 ? string : string.substring(0,35)+"...";
+}
+
 function prepareBarChartData(data){
     console.log(data);
     const dataMap = d3.rollup(
@@ -61,9 +65,70 @@ function formatTicks(d){
     .replace('T','tri')
 }
 function setupCanvas(barChartData){
-    const svg_width = 400;
+
+    let metric = 'revenue';
+
+    function click(){
+        metric = this.dataSet.name;
+        const thisData = chooseData(metric, moviesClean);
+        update(thisData);
+    }
+    d3.selectAll('button').on('click',click);
+
+    function update(data){
+        console.log(data);
+        //Update Scale
+        xMax = d3.max(data, d=>d[metric]);
+        xScale_v3 = d3.scaleLinear([0, xMax],[0,chart_width]);
+
+        yScale = d3.scaleBand().domain(data.map(d=>d.title))
+                   .rangeRound([0, chart_height])
+                   .paddingInner(0.25);
+
+        //Transition Settings
+        const defaultDelay = 1000
+        const transitionDelay = d3.transition().duration(defaultDelay);
+
+        //Update axis
+        xAxisDraw.transition(transitionDelay).call(xAxis.scale(xScale_v3));
+        yAxisDraw.transition(transitionDelay).call(yAxis.scale(yScale));
+
+        //Update Header
+        header.select('tspan').text(`Top 15 ${metric} movies ${metric==='popularity'?'':'in $US'}`);
+
+        bars.selectAll('.bar').data(data, d=>d.title).join(
+            enter =>{
+                enter.append('rect').attr('class','bar')
+                     .attr('x',0).attr('y',d=>yScale(d.title))
+                     .attr('height',yScale.bandwidth())
+                     .style('fill','lightcyan')
+                     .transition(transitionDelay)
+                     .delay((d,i)=>i*20)
+                     .attr('width',d=>xScale_v3(d[metric]))
+                     .style('fill', 'dodgerblue')
+            },
+            update => {
+                update.transition(transitionDelay)
+                      .delay((d,i)=>i*20)
+                      .attr('y',d=>yScale(d.title))
+                      .attr('width',d=>xScale_v3(d[metric]))
+            },
+            exit => {
+                exit.transition().duration(defaultDelay/2)
+                    .style('fill-opacity',0)
+                    .remove()
+            }
+        );
+
+        d3.selectAll('.bar')
+          .on('mouseover',mouseover)
+          .on('mousemove',mousemove)
+          .on('mouseout',mouseout);
+
+    }
+    const svg_width = 700;
     const svg_height = 500;
-    const chart_margin = {top: 80, right: 40, bottom: 40, left: 80};
+    const chart_margin = {top: 80, right: 80, bottom: 40, left: 250};
     const chart_width = svg_width - (chart_margin.left + chart_margin.right);
     const chart_height = svg_height - (chart_margin.top + chart_margin.bottom);
 
@@ -76,62 +141,106 @@ function setupCanvas(barChartData){
     const xExtent = d3.extent(barChartData, d=>d.revenue);
     const xScale_v1 = d3.scaleLinear().domain(xExtent).range([0,chart_width]);
 
-    const xMax = d3.max(barChartData, d=>d.revenue);
+    let xMax = d3.max(barChartData, d=>d.revenue);
     const xScale_v2 = d3.scaleLinear().domain([0,xMax]).range([0,chart_width]);
 
-    const xScale_v3 = d3.scaleLinear([0,xMax],[0,chart_width]);
+    let xScale_v3 = d3.scaleLinear([0,xMax],[0,chart_width]);
 
-    const yScale = d3.scaleBand().domain(barChartData.map(d=>d.genre))
+    let yScale = d3.scaleBand().domain(barChartData.map(d=>d.title))
                     .rangeRound([0, chart_height])
                     .paddingInner(0.25);
 
     //Draw Bars
-    const bars = this_svg.selectAll('.bar')
-                         .data(barChartData)
-                         .enter()
-                         .append('rect')
-                         .attr('class','bar')
-                         .attr('x',0)
-                         .attr('y',d=>yScale(d.genre))
-                         .attr('width',d=>xScale_v3(d.revenue))
-                         .attr('height',yScale.bandwidth())
-                         .style('fill','dodgerblue');
+    //const bars = this_svg.selectAll('.bar')
+    //                     .data(barChartData)
+    //                     .enter()
+    //                     .append('rect')
+    //                     .attr('class','bar')
+    //                     .attr('x',0)
+    //                     .attr('y',d=>yScale(d.genre))
+    //                     .attr('width',d=>xScale_v3(d.revenue))
+    //                     .attr('height',yScale.bandwidth())
+    //                     .style('fill','dodgerblue');
+    const bars = this_svg.append('g').attr('class','bars');
 
     //Draw Header
-    const header = this_svg.append('g').attr('class','bar-header')
+    let header = this_svg.append('g').attr('class','bar-header')
                            .attr('transform',`translate(0,${-chart_margin.top/2})`)
                            .append('text');
-    header.append('tspan').text('Total revenue by genre in $US');
+    header.append('tspan').text('Top 15 XXX movies');
     header.append('tspan').text('Year: 2000-2009')
           .attr('x',0).attr('y',20).style('font-size','0.8em').style('fill','#555');
 
-    const xAxis = d3.axisTop(xScale_v3)
+    let xAxis = d3.axisTop(xScale_v3).ticks(5)
                     .tickFormat(formatTicks)
                     .tickSizeInner(-chart_height)
                     .tickSizeOuter(0);
-    const sAxisDraw = this_svg.append('g')
-                              .attr('class','x axis')
-                              .call(xAxis);
+    let xAxisDraw = this_svg.append('g')
+                              .attr('class','x axis');
 
-    const yAxis = d3.axisLeft(yScale).tickSize(0);
-    const yAxisDraw = this_svg.append('g')
-                              .attr('class','y axis')
-                              .call(yAxis);
+    let yAxis = d3.axisLeft(yScale).tickSize(0);
+    let yAxisDraw = this_svg.append('g')
+                              .attr('class','y axis');
     yAxisDraw.selectAll('text').attr('dx','-0.6em');
+    update(barChartData);
+
+    // Interactive //互動
+    const tip = d3.select('.tooltip');
+
+    function mouseover(e){
+        //get data
+        const thisBarData = d3.select(this).data()[0];
+        tip.style('left',(e.clientX+15)+'px')
+        .style('top',e.clientY+'px')
+        .transition()
+        .style('opacity',0.98);
+        tip.select('h3').html(`${thisBarData.title}, ${thisBarData.release_year}`);
+        tip.select('h4').html(`${thisBarData.tagline}, ${thisBarData.runtime} min.`);
+        }
+
+    function mousemove(e){
+        // Get Data
+        const thisBarData = d3.select(this).data()[0];
+        const bodyData = [
+            ['Budget', formatTicks(thisBarData.budget)],
+            ['Revenue', formatTicks(thisBarData.revenue)],
+            ['Profit', formatTicks(thisBarData.revenue - thisBarData.budget)],
+            ['TMDB Popularity', Math.round(thisBarData.popularity)],
+            ['IMDB Rating', thisBarData.vote_average],
+            ['Genres', thisBarData.genres.join(', ')]
+        ];
+
+        tip.style('left',(e.clientX+15) + 'px')
+           .style('top',e.clientY + 'px')
+           .style('opacity',0.98)
+
+        d3.select('.tip-body').selectAll('p').data(bodyData)
+          .join('p').attr('class','tip-info')
+          .html(d=>`${d[0]} : ${d[1]}`);
+    }
+
+    function mouseout(e){
+        tip.transition()
+           .style('opacity',0)
+    }
+
+    //監聽
+    d3.selectAll('.bar')
+      .on('mouseover',mouseover)
+      .on('mousemove',mousemove)
+      .on('mouseout',mouseout);
+
+    
 }
 
 
 //Main
 function ready(movies){
     const moviesClean = filterData(movies);
-    const barChartData = prepareBarChartData(moviesClean).sort(
-        (a,b)=>{
-            return d3.descending(a.revenue, b.revenue);
-        }
-    );
-    console.log(barChartData);
+    const revenueData = chooseData("revenue",moviesClean);
+    //console.log(barChartData);
     //Draw the Graph
-    setupCanvas(barChartData);
+    setupCanvas(revenueData, moviesClean);
 }
 
 //Load Data
@@ -141,6 +250,11 @@ d3.csv('data/movies.csv',type).then(
         //console.log(res);
     }
 );
+
+function chooseData(metric, moviesClean){
+    const thisData = moviesClean.sort((a,b)=>b[metric]-a[metric]).filter((d,i)=>i<15);
+    return thisData;
+}
 
 
 
